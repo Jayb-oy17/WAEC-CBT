@@ -377,7 +377,7 @@ export default function WaecApp() {
       {
         name: "Commercial",
         icon: "💼",
-        subjects: "Economics, Accounting, Commerce, Business + Math & English",
+        subjects: "Economics, Accounting, Commerce + Math & English",
         color: "from-green-500 to-emerald-500",
       },
     ];
