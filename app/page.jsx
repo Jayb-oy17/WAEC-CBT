@@ -475,7 +475,6 @@ export default function WaecApp() {
           "English",
           "Literature in English",
           "History",
-          "Geography",
           "Government",
         ],
         color: "from-purple-500 to-pink-500",
@@ -514,7 +513,7 @@ export default function WaecApp() {
               <button
                 key={dept.name}
                 onClick={() => startTestWithDepartment(dept.name)}
-                className="group relative overflow-hidden bg-white border-2 border-gray-200 hover:border-indigo-500 rounded-xl p-6 transition-all duration-300 hover:shadow-xl"
+                className="group  relative overflow-hidden bg-white border-2 border-gray-200 hover:border-indigo-500 rounded-xl p-6 transition-all duration-300 hover:shadow-xl"
               >
                 <div
                   className={`absolute inset-0 bg-gradient-to-br ${dept.color} opacity-0 group-hover:opacity-10 transition-opacity duration-300`}
@@ -524,8 +523,8 @@ export default function WaecApp() {
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">
                     {dept.name}
                   </h3>
-                  <p className="text-sm text-gray-600 leading-relaxed">
-                    {dept.subjects}
+                  <p className="text-sm text-gray-600">
+                    {dept.subjects.length} Subjects
                   </p>
                 </div>
               </button>
