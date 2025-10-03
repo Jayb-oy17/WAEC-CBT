@@ -29,6 +29,10 @@ export default function WaecApp() {
     options: ["", "", "", ""],
     correctAnswer: 0,
   });
+  // Add these to your existing state variables
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [availableSubjects, setAvailableSubjects] = useState([]);
+  const [completedSubjects, setCompletedSubjects] = useState([]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -39,9 +43,28 @@ export default function WaecApp() {
   }, []);
 
   useEffect(() => {
-    const savedProgress = localStorage.getItem("waec_test_progress");
-    setHasProgress(!!savedProgress);
-  }, []);
+    if (testStarted && questions.length > 0) {
+      localStorage.setItem(
+        "waec_test_progress",
+        JSON.stringify({
+          department: selectedDepartment,
+          subject: selectedSubject,
+          questions,
+          answers,
+          currentQuestionIndex,
+          timeRemaining,
+        })
+      );
+    }
+  }, [
+    answers,
+    currentQuestionIndex,
+    timeRemaining,
+    questions,
+    testStarted,
+    selectedDepartment,
+    selectedSubject, // Add this
+  ]);
 
   useEffect(() => {
     if (!testStarted || view !== "test") return;
@@ -89,12 +112,54 @@ export default function WaecApp() {
 
   const startTestWithDepartment = (department) => {
     setSelectedDepartment(department);
-    const departmentQuestions = getQuestionsByDepartment(department);
-    const shuffled = shuffleArray(departmentQuestions);
+
+    const departments = [
+      {
+        name: "Science",
+        subjects: ["Mathematics", "English", "Physics", "Chemistry", "Biology"],
+      },
+      {
+        name: "Arts",
+        subjects: [
+          "Mathematics",
+          "English",
+          "Literature in English",
+          "History",
+          "Government",
+        ],
+      },
+      {
+        name: "Commercial",
+        subjects: [
+          "Mathematics",
+          "English",
+          "Economics",
+          "Accounting",
+          "Commerce",
+        ],
+      },
+    ];
+
+    const dept = departments.find((d) => d.name === department);
+    setAvailableSubjects(dept.subjects);
+    setCompletedSubjects([]);
+    setView("subject-select");
+  };
+
+  const startTestWithSubject = (subject) => {
+    setSelectedSubject(subject);
+
+    // Get questions for the specific subject within the department
+    const allDepartmentQuestions = getQuestionsByDepartment(selectedDepartment);
+    const subjectQuestions = allDepartmentQuestions.filter(
+      (q) => q.subject === subject
+    );
+
+    const shuffled = shuffleArray(subjectQuestions);
     setQuestions(shuffled);
     setAnswers({});
     setCurrentQuestionIndex(0);
-    setTimeRemaining(7200);
+    setTimeRemaining(1800); // 30 minutes per subject instead of 2 hours
     setTestStarted(true);
     setView("test");
   };
@@ -105,6 +170,7 @@ export default function WaecApp() {
     );
     if (savedProgress) {
       setSelectedDepartment(savedProgress.department);
+      setSelectedSubject(savedProgress.subject);
       setQuestions(savedProgress.questions);
       setAnswers(savedProgress.answers);
       setCurrentQuestionIndex(savedProgress.currentQuestionIndex);
@@ -132,9 +198,42 @@ export default function WaecApp() {
   };
 
   const handleSubmitTest = () => {
+    // Mark subject as completed
+    setCompletedSubjects((prev) => [...prev, selectedSubject]);
+
+    // Save progress for this department
+    const departmentProgress = JSON.parse(
+      localStorage.getItem("waec_department_progress") || "{}"
+    );
+
+    departmentProgress[selectedDepartment] =
+      departmentProgress[selectedDepartment] || {};
+    departmentProgress[selectedDepartment][selectedSubject] = {
+      completed: true,
+      score: calculateResults().correct,
+      total: questions.length,
+      date: new Date().toISOString(),
+    };
+
+    localStorage.setItem(
+      "waec_department_progress",
+      JSON.stringify(departmentProgress)
+    );
+
+    // Clear current test progress
     localStorage.removeItem("waec_test_progress");
     setTestStarted(false);
-    setView("results");
+
+    // Check if all subjects are completed
+    const allCompleted = availableSubjects.every((subject) =>
+      [...completedSubjects, selectedSubject].includes(subject)
+    );
+
+    if (allCompleted) {
+      setView("department-complete");
+    } else {
+      setView("subject-complete");
+    }
   };
 
   const handleAddQuestion = (newQuestion) => {
@@ -365,19 +464,32 @@ export default function WaecApp() {
       {
         name: "Science",
         icon: "🔬",
-        subjects: "Physics, Chemistry, Biology + Math & English",
+        subjects: ["Mathematics", "English", "Physics", "Chemistry", "Biology"],
         color: "from-blue-500 to-cyan-500",
       },
       {
         name: "Arts",
         icon: "📚",
-        subjects: "Literature, History, Geography, Government + Math & English",
+        subjects: [
+          "Mathematics",
+          "English",
+          "Literature in English",
+          "History",
+          "Geography",
+          "Government",
+        ],
         color: "from-purple-500 to-pink-500",
       },
       {
         name: "Commercial",
         icon: "💼",
-        subjects: "Economics, Accounting, Commerce + Math & English",
+        subjects: [
+          "Mathematics",
+          "English",
+          "Economics",
+          "Accounting",
+          "Commerce",
+        ],
         color: "from-green-500 to-emerald-500",
       },
     ];
@@ -469,7 +581,7 @@ export default function WaecApp() {
               </button>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">
-                  WAEC Practice Test - {selectedDepartment}
+                  {selectedDepartment} - {selectedSubject}
                 </h1>
                 <p className="text-sm text-gray-600">
                   Question {currentQuestionIndex + 1} of {questions.length}
@@ -496,7 +608,6 @@ export default function WaecApp() {
               </div>
             </div>
           </div>
-
           <div className="bg-white rounded-xl shadow-md p-8 mb-6">
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
@@ -680,7 +791,6 @@ export default function WaecApp() {
               </div>
             )}
           </div>
-
           <div className="bg-white rounded-xl shadow-md p-4 flex items-center justify-between gap-4">
             <button
               onClick={handlePrevious}
@@ -897,6 +1007,157 @@ export default function WaecApp() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === "subject-select") {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="max-w-4xl w-full bg-white rounded-2xl shadow-2xl p-8 md:p-12">
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-indigo-600 rounded-full mb-4">
+              <BookOpen className="w-10 h-10 text-white" />
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              Select Your Subject
+            </h1>
+            <p className="text-gray-600 text-lg">
+              Choose a subject for your {selectedDepartment} examination
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4 mb-6">
+            {availableSubjects.map((subject) => {
+              const isCompleted = completedSubjects.includes(subject);
+              return (
+                <button
+                  key={subject}
+                  onClick={() => startTestWithSubject(subject)}
+                  disabled={isCompleted}
+                  className={`group relative overflow-hidden border-2 rounded-xl p-6 transition-all duration-300 text-left ${
+                    isCompleted
+                      ? "bg-green-50 border-green-200 cursor-not-allowed"
+                      : "bg-white border-gray-200 hover:border-indigo-500 hover:shadow-xl"
+                  }`}
+                >
+                  <div className="relative">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-xl font-bold text-gray-900">
+                        {subject}
+                      </h3>
+                      {isCompleted && (
+                        <span className="bg-green-500 text-white text-sm px-2 py-1 rounded-full">
+                          Completed
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {isCompleted
+                        ? "You have completed this subject"
+                        : "Click to start test"}
+                    </p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-6">
+            <p className="text-sm text-amber-900 text-center">
+              <span className="font-semibold">Note:</span> Complete one subject
+              at a time. Your progress will be saved automatically.
+            </p>
+          </div>
+
+          <div className="flex gap-4">
+            <button
+              onClick={() => setView("department-select")}
+              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-3 border-2 border-gray-300"
+            >
+              <ChevronLeft className="w-5 h-5" />
+              Back to Departments
+            </button>
+            <button
+              onClick={goHome}
+              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-3"
+            >
+              <Home className="w-5 h-5" />
+              Go Home
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Add this view after the "results" view:
+
+  if (view === "subject-complete") {
+    const results = calculateResults();
+    const percentage = ((results.correct / results.total) * 100).toFixed(1);
+
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8 md:p-12">
+          <div className="text-center mb-8">
+            <div
+              className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${
+                percentage >= 50 ? "bg-green-600" : "bg-red-600"
+              }`}
+            >
+              <span className="text-4xl text-white font-bold">
+                {percentage}%
+              </span>
+            </div>
+            <h1 className="text-4xl font-bold text-gray-900 mb-2">
+              {selectedSubject} Complete!
+            </h1>
+            <p className="text-gray-600 text-lg">
+              You scored {results.correct} out of {results.total} in{" "}
+              {selectedSubject}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-4 mb-8">
+            <div className="bg-green-50 border border-green-200 rounded-xl p-4 text-center">
+              <p className="text-green-600 text-sm font-medium mb-1">Correct</p>
+              <p className="text-2xl font-bold text-green-900">
+                {results.correct}
+              </p>
+            </div>
+            <div className="bg-red-50 border border-red-200 rounded-xl p-4 text-center">
+              <p className="text-red-600 text-sm font-medium mb-1">Incorrect</p>
+              <p className="text-2xl font-bold text-red-900">
+                {results.incorrect}
+              </p>
+            </div>
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-center">
+              <p className="text-gray-600 text-sm font-medium mb-1">Score</p>
+              <p className="text-2xl font-bold text-gray-900">{percentage}%</p>
+            </div>
+          </div>
+
+          <div className="space-y-4">
+            <button
+              onClick={() => {
+                setCompletedSubjects((prev) => [...prev, selectedSubject]);
+                setView("subject-select");
+              }}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-3 shadow-lg"
+            >
+              <BookOpen className="w-5 h-5" />
+              Choose Another Subject
+            </button>
+            <button
+              onClick={goHome}
+              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-3 border-2 border-gray-300"
+            >
+              <Home className="w-5 h-5" />
+              Back to Home
+            </button>
           </div>
         </div>
       </div>
