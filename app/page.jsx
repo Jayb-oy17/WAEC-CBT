@@ -4,31 +4,24 @@ import { useState, useEffect } from "react";
 import {
   Clock,
   BookOpen,
-  Plus,
   RotateCcw,
   ChevronLeft,
   ChevronRight,
   Home,
   GraduationCap,
 } from "lucide-react";
-import { getQuestionsByDepartment, shuffleArray } from "@/lib/questions";
+import { getQuestions, shuffleArray } from "@/lib/questions";
 
 export default function WaecApp() {
   const [showPreloader, setShowPreloader] = useState(true);
-  const [view, setView] = useState("home"); // 'home', 'department-select', 'test', 'results', 'add-questions'
+  const [view, setView] = useState("home"); // 'home', 'department-select', 'test', 'results'
   const [selectedDepartment, setSelectedDepartment] = useState(null);
   const [questions, setQuestions] = useState([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState({});
-  const [timeRemaining, setTimeRemaining] = useState(7200); // 2 hours in seconds
+  const [timeRemaining, setTimeRemaining] = useState(3600); // 1 hour in seconds per subject
   const [hasProgress, setHasProgress] = useState(false);
   const [testStarted, setTestStarted] = useState(false);
-  const [formData, setFormData] = useState({
-    subject: "",
-    question: "",
-    options: ["", "", "", ""],
-    correctAnswer: 0,
-  });
   // Add these to your existing state variables
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [availableSubjects, setAvailableSubjects] = useState([]);
@@ -107,59 +100,28 @@ export default function WaecApp() {
 
   const startNewTest = () => {
     localStorage.removeItem("waec_test_progress");
-    setView("department-select");
-  };
-
-  const startTestWithDepartment = (department) => {
-    setSelectedDepartment(department);
-
-    const departments = [
-      {
-        name: "Science",
-        subjects: ["Mathematics", "English", "Physics", "Chemistry", "Biology"],
-      },
-      {
-        name: "Arts",
-        subjects: [
-          "Mathematics",
-          "English",
-          "Literature in English",
-          "History",
-          "Government",
-        ],
-      },
-      {
-        name: "Commercial",
-        subjects: [
-          "Mathematics",
-          "English",
-          "Economics",
-          "Accounting",
-          "Commerce",
-        ],
-      },
-    ];
-
-    const dept = departments.find((d) => d.name === department);
-    setAvailableSubjects(dept.subjects);
+    // Preload all available subjects once, without departments
+    const allQuestions = getQuestions();
+    const subjectsSet = new Set(allQuestions.map((q) => q.subject).filter(Boolean));
+    setAvailableSubjects(Array.from(subjectsSet));
     setCompletedSubjects([]);
     setView("subject-select");
   };
 
+  // Department selection is no longer used; subjects are shown directly
+
   const startTestWithSubject = (subject) => {
     setSelectedSubject(subject);
 
-    // Get questions for the specific subject within the department
-    const allDepartmentQuestions = getQuestionsByDepartment(selectedDepartment);
-    const subjectQuestions = allDepartmentQuestions.filter(
-      (q) => q.subject === subject
-    );
+    // Get questions for the specific subject (no departments)
+    const allQuestions = getQuestions();
+    const subjectQuestions = allQuestions.filter((q) => q.subject === subject);
 
     const shuffled = shuffleArray(subjectQuestions);
     setQuestions(shuffled);
     setAnswers({});
     setCurrentQuestionIndex(0);
-    setTimeRemaining(1800); // 30 minutes per subject instead of 2 hours
+    setTimeRemaining(3600); // 1 hour (3600 seconds) per subject
     setTestStarted(true);
     setView("test");
   };
@@ -236,21 +198,6 @@ export default function WaecApp() {
     }
   };
 
-  const handleAddQuestion = (newQuestion) => {
-    const customQuestions = JSON.parse(
-      localStorage.getItem("waec_custom_questions") || "[]"
-    );
-    const questionWithId = {
-      ...newQuestion,
-      id: Date.now(),
-    };
-    customQuestions.push(questionWithId);
-    localStorage.setItem(
-      "waec_custom_questions",
-      JSON.stringify(customQuestions)
-    );
-  };
-
   const goHome = () => {
     setView("home");
     setHasProgress(!!localStorage.getItem("waec_test_progress"));
@@ -280,24 +227,6 @@ export default function WaecApp() {
     });
 
     return { correct, incorrect, unanswered, total: questions.length };
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (
-      formData.subject &&
-      formData.question &&
-      formData.options.every((opt) => opt.trim())
-    ) {
-      handleAddQuestion(formData);
-      setFormData({
-        subject: "",
-        question: "",
-        options: ["", "", "", ""],
-        correctAnswer: 0,
-      });
-      alert("Question added successfully!");
-    }
   };
 
   if (showPreloader) {
@@ -396,10 +325,10 @@ export default function WaecApp() {
               <BookOpen className="w-10 h-10 text-white" />
             </div>
             <h1 className="text-4xl font-bold text-gray-900 mb-2">
-              WAEC CBT Practice
+              CBT Practise
             </h1>
             <p className="text-gray-600 text-lg">
-              Prepare for your WAEC examination with authentic past questions
+              Prepare for your CBT examination with authentic past questions
             </p>
           </div>
 
@@ -421,14 +350,6 @@ export default function WaecApp() {
                 Continue Previous Test
               </button>
             )}
-
-            <button
-              onClick={() => setView("add-questions")}
-              className="w-full bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-4 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-3 border-2 border-gray-300"
-            >
-              <Plus className="w-5 h-5" />
-              Add Custom Questions
-            </button>
           </div>
 
           <div className="mt-8 p-6 bg-blue-50 rounded-xl border border-blue-200">
@@ -438,7 +359,7 @@ export default function WaecApp() {
             <ul className="space-y-2 text-sm text-gray-700">
               <li className="flex items-start gap-2">
                 <span className="text-indigo-600 font-bold">•</span>
-                <span>Duration: 2 hours (120 minutes)</span>
+                <span>Duration: 1 hour per subject (60 minutes)</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-indigo-600 font-bold">•</span>
@@ -504,7 +425,7 @@ export default function WaecApp() {
               Select Your Department
             </h1>
             <p className="text-gray-600 text-lg">
-              Choose the department for your WAEC examination
+              Choose the department for your CBT examination
             </p>
           </div>
 
@@ -580,7 +501,7 @@ export default function WaecApp() {
               </button>
               <div>
                 <h1 className="text-xl font-bold text-gray-900">
-                  {selectedDepartment} - {selectedSubject}
+                  {selectedSubject}
                 </h1>
                 <p className="text-sm text-gray-600">
                   Question {currentQuestionIndex + 1} of {questions.length}
@@ -632,7 +553,6 @@ export default function WaecApp() {
                   <button
                     key={index}
                     onClick={() => handleAnswer(index)}
-                    disabled={selectedAnswer !== undefined}
                     className={`
                       w-full text-left p-4 rounded-lg border-2 transition-all duration-200
                       ${
@@ -665,11 +585,7 @@ export default function WaecApp() {
                           ? "border-gray-200 bg-gray-50 opacity-60"
                           : ""
                       }
-                      ${
-                        selectedAnswer !== undefined
-                          ? "cursor-not-allowed"
-                          : "cursor-pointer"
-                      }
+                      cursor-pointer
                     `}
                   >
                     <div className="flex items-center gap-3">
@@ -775,12 +691,12 @@ export default function WaecApp() {
                   `}
                 >
                   {selectedAnswer === currentQuestion.correctAnswer
-                    ? "🎉 Correct!"
-                    : "❌ Incorrect"}
+                    ? "Correct"
+                    : "Incorrect"}
                 </p>
                 <p className="text-sm text-gray-700">
                   {selectedAnswer === currentQuestion.correctAnswer
-                    ? "Well done! You selected the right answer."
+                    ? "You selected the right answer."
                     : `The correct answer is ${String.fromCharCode(
                         65 + currentQuestion.correctAnswer
                       )}: ${
@@ -790,6 +706,47 @@ export default function WaecApp() {
               </div>
             )}
           </div>
+
+          <div className="mt-6 bg-white rounded-xl shadow-md p-6">
+            <h3 className="font-semibold text-gray-900 mb-4">
+              Question Navigator
+            </h3>
+            <div className="grid grid-cols-10 gap-2">
+              {questions.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => setCurrentQuestionIndex(index)}
+                  className={`
+                    w-10 h-10 rounded-lg font-semibold text-sm transition-colors duration-200
+                    ${
+                      index === currentQuestionIndex
+                        ? "bg-indigo-600 text-white"
+                        : answers[index] !== undefined
+                          ? "bg-green-100 text-green-700 hover:bg-green-200"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }
+                  `}
+                >
+                  {index + 1}
+                </button>
+              ))}
+            </div>
+            <div className="mt-4 flex items-center gap-4 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-green-100 rounded" />
+                <span>Answered</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-indigo-600 rounded" />
+                <span>Current</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 bg-gray-100 rounded" />
+                <span>Not Answered</span>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white rounded-xl shadow-md p-4 flex items-center justify-between gap-4">
             <button
               onClick={handlePrevious}
@@ -801,14 +758,7 @@ export default function WaecApp() {
             </button>
 
             <div className="flex gap-2">
-              {currentQuestionIndex === questions.length - 1 ? (
-                <button
-                  onClick={handleSubmitTest}
-                  className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
-                >
-                  Submit Test
-                </button>
-              ) : (
+              {currentQuestionIndex !== questions.length - 1 && (
                 <button
                   onClick={handleNext}
                   className="flex items-center gap-2 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors"
@@ -817,6 +767,12 @@ export default function WaecApp() {
                   <ChevronRight className="w-5 h-5" />
                 </button>
               )}
+              <button
+                onClick={handleSubmitTest}
+                className="px-6 py-2 bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 rounded-lg font-semibold transition-colors"
+              >
+                Submit Now
+              </button>
             </div>
           </div>
         </div>
@@ -1024,7 +980,7 @@ export default function WaecApp() {
               Select Your Subject
             </h1>
             <p className="text-gray-600 text-lg">
-              Choose a subject for your {selectedDepartment} examination
+              Choose a subject to begin your CBT test
             </p>
           </div>
 
@@ -1072,13 +1028,6 @@ export default function WaecApp() {
           </div>
 
           <div className="flex gap-4">
-            <button
-              onClick={() => setView("department-select")}
-              className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-900 font-semibold py-3 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-3 border-2 border-gray-300"
-            >
-              <ChevronLeft className="w-5 h-5" />
-              Back to Departments
-            </button>
             <button
               onClick={goHome}
               className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200 flex items-center justify-center gap-3"

@@ -20,13 +20,25 @@ export default function TestPage() {
     const allQuestions = getQuestions()
     const shuffled = shuffleArray(allQuestions)
 
-    const savedProgress = localStorage.getItem("waec_test_progress")
+    let progress = null
+    try {
+      const savedProgress = localStorage.getItem("waec_test_progress")
+      if (savedProgress) {
+        progress = JSON.parse(savedProgress)
+      }
+    } catch {
+      progress = null
+    }
 
-    if (savedProgress) {
-      const progress = JSON.parse(savedProgress)
+    if (
+      progress &&
+      Array.isArray(progress.questions) &&
+      typeof progress.currentQuestionIndex === "number" &&
+      typeof progress.timeRemaining === "number"
+    ) {
       setQuestions(progress.questions)
       setCurrentQuestionIndex(progress.currentQuestionIndex)
-      setAnswers(progress.answers)
+      setAnswers(progress.answers || {})
       setTimeRemaining(progress.timeRemaining)
       setTestStarted(true)
     } else {
@@ -70,6 +82,8 @@ export default function TestPage() {
   const handleSubmit = () => {
     // Calculate results
     let correctCount = 0
+    const answeredCount = Object.keys(answers).length
+
     questions.forEach((question, index) => {
       if (answers[index] === question.correctAnswer) {
         correctCount++
@@ -79,8 +93,8 @@ export default function TestPage() {
     const results = {
       totalQuestions: questions.length,
       correctAnswers: correctCount,
-      incorrectAnswers: questions.length - Object.keys(answers).length - correctCount,
-      unanswered: questions.length - Object.keys(answers).length,
+      incorrectAnswers: answeredCount - correctCount,
+      unanswered: questions.length - answeredCount,
       timeTaken: 7200 - timeRemaining,
       questions,
       answers,
@@ -113,7 +127,7 @@ export default function TestPage() {
       <div className="bg-white shadow-md border-b border-gray-200">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">WAEC CBT Practice</h1>
+            <h1 className="text-xl font-bold text-gray-900">CBT Practise</h1>
             <p className="text-sm text-gray-600">
               Question {currentQuestionIndex + 1} of {questions.length}
             </p>

@@ -7,9 +7,9 @@ import { Suspense } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "WAEC CBT Practice Platform",
+  title: "CBT Practise Platform",
   description:
-    "Practice WAEC computer-based tests with authentic questions, timer, and instant feedback",
+    "Practice CBT computer-based tests with authentic questions, timer, and instant feedback",
   generator: "v0.app",
   icons: {
     icon: "/favicon.jpg",

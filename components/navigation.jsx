@@ -24,23 +24,24 @@ export default function Navigation({ currentIndex, totalQuestions, onPrevious, o
         <p className="text-sm text-gray-600">{hasAnswer ? "Answer recorded" : "Select an answer to continue"}</p>
       </div>
 
-      {!isLast ? (
-        <button
-          onClick={onNext}
-          className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors duration-200"
-        >
-          Next
-          <ChevronRight className="w-5 h-5" />
-        </button>
-      ) : (
+      <div className="flex items-center gap-3">
+        {!isLast && (
+          <button
+            onClick={onNext}
+            className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold bg-indigo-600 text-white hover:bg-indigo-700 transition-colors duration-200"
+          >
+            Next
+            <ChevronRight className="w-5 h-5" />
+          </button>
+        )}
         <button
           onClick={onSubmit}
-          className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold bg-green-600 text-white hover:bg-green-700 transition-colors duration-200"
+          className="flex items-center gap-2 px-6 py-3 rounded-lg font-semibold bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 transition-colors duration-200"
         >
-          Submit Test
+          Submit Now
           <Send className="w-5 h-5" />
         </button>
-      )}
+      </div>
     </div>
   )
 }

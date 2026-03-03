@@ -91,11 +91,11 @@ export default function QuestionDisplay({ question, selectedAnswer, onAnswer, qu
               ${selectedAnswer === question.correctAnswer ? "text-green-900" : "text-red-900"}
             `}
           >
-            {selectedAnswer === question.correctAnswer ? "🎉 Correct!" : "❌ Incorrect"}
+            {selectedAnswer === question.correctAnswer ? "Correct" : "Incorrect"}
           </p>
           <p className="text-sm text-gray-700">
             {selectedAnswer === question.correctAnswer
-              ? "Well done! You selected the right answer."
+              ? "You selected the right answer."
               : `The correct answer is ${String.fromCharCode(65 + question.correctAnswer)}: ${question.options[question.correctAnswer]}`}
           </p>
         </div>
