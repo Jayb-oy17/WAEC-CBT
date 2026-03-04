@@ -132,7 +132,19 @@ export default function TestPage() {
               Question {currentQuestionIndex + 1} of {questions.length}
             </p>
           </div>
-          <Timer timeRemaining={timeRemaining} setTimeRemaining={setTimeRemaining} onTimeUp={handleTimeUp} />
+          <div className="flex items-center gap-4">
+            <a
+              href="/logout"
+              className="text-sm font-semibold text-gray-700 hover:text-gray-900 hover:underline"
+            >
+              Logout
+            </a>
+            <Timer
+              timeRemaining={timeRemaining}
+              setTimeRemaining={setTimeRemaining}
+              onTimeUp={handleTimeUp}
+            />
+          </div>
         </div>
       </div>
 

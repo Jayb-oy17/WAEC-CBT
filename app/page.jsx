@@ -320,6 +320,14 @@ export default function WaecApp() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="max-w-2xl w-full bg-white rounded-2xl shadow-2xl p-8 md:p-12">
+          <div className="flex justify-end mb-4">
+            <a
+              href="/logout"
+              className="text-sm font-semibold text-gray-700 hover:text-gray-900 hover:underline"
+            >
+              Logout
+            </a>
+          </div>
           <div className="text-center mb-8">
             <div className="inline-flex items-center justify-center w-20 h-20 bg-indigo-600 rounded-full mb-4">
               <BookOpen className="w-10 h-10 text-white" />

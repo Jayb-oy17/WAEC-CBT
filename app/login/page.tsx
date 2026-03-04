@@ -1,0 +1,93 @@
+"use client";
+
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useState, useTransition } from "react";
+import { login } from "./actions";
+
+export default function LoginPage() {
+  const params = useSearchParams();
+  const nextPath = params.get("next") || "/";
+  const signup = params.get("signup");
+
+  const [isPending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">Login</h1>
+        <p className="text-gray-600 mb-6">Sign in to continue to CBT Practise.</p>
+
+        {signup === "success" && (
+          <div className="mb-4 rounded-lg border border-green-200 bg-green-50 p-3 text-green-800 text-sm">
+            Account created. Please log in (check your email if confirmation is enabled).
+          </div>
+        )}
+
+        {error && (
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-red-800 text-sm">
+            {error}
+          </div>
+        )}
+
+        <form
+          action={(formData) => {
+            setError(null);
+            startTransition(async () => {
+              const res = await login(formData);
+              if (res && !res.ok) setError(res.message);
+            });
+          }}
+          className="space-y-4"
+        >
+          <input type="hidden" name="next" value={nextPath} />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Email
+            </label>
+            <input
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              placeholder="you@example.com"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Password
+            </label>
+            <input
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              placeholder="Your password"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={isPending}
+            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:opacity-60 text-white font-semibold py-3 px-6 rounded-xl transition-colors duration-200"
+          >
+            {isPending ? "Signing in..." : "Login"}
+          </button>
+        </form>
+
+        <p className="text-sm text-gray-600 mt-6">
+          Don’t have an account?{" "}
+          <Link className="text-indigo-700 font-semibold hover:underline" href="/signup">
+            Sign up
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
+}
+
